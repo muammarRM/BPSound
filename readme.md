@@ -5,22 +5,27 @@
 ![Audio Engine](https://img.shields.io/badge/Audio-Pygame-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-brightgreen.svg)
 
-**BPSound** is a lightweight desktop application designed to play `.mp3` audio files automatically based on set hourly schedules. Built with a user-friendly dark interface, it simplifies audio management for routine scheduling tasks.
+**BPSound** is a feature-rich desktop application designed to play audio and extracted video soundtracks automatically based on hourly and day-specific schedules. Built with a modern dark interface, it streamlines automated public announcements, background music, or hourly audio reminders.
 
 ---
 
 ## ✨ Key Features
 
-* **Flexible Audio Scheduling:** Assign specific MP3 files to any hour and minute.
-* **Interactive Time Picker:** Dual dropdown menus (hours & minutes) for quick and seamless time selection.
-* **Full Control Management (CRUD):**
-  * ➕ **Add New:** Create new time-to-audio schedules.
-  * ✏️ **Update:** Change audio tracks or times for existing schedules.
-  * 🗑️ **Delete:** Remove selected schedules from the list.
-  * ⏹️ **Stop:** Immediately stop the currently playing audio.
-* **Auto-Save Configuration:** Schedules are saved automatically to `config_bpsound.json`.
-* **Multi-Threading Engine:** Background playback monitoring keeps the interface responsive without freezing.
-
+* 📅 **Day-Based & Hourly Scheduling:** Assign audio files to specific days of the week (Monday–Sunday) or set them to play every day.
+* 🎬 **Automatic Video-to-Audio Conversion:** Select video files (`.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.flv`) and BPSound will automatically extract and cache the audio as `.mp3` using `moviepy`.
+* 🔊 **Master Volume Control:** Interactive real-time volume slider (0% to 100%) integrated with the Pygame audio engine.
+* ▶️ **Audio Testing & Quick Preview:**
+  * Click **▶ Tes Audio** to preview selected tracks before saving.
+  * **Double-click** any schedule in the list to trigger immediate playback testing.
+* ⏰ **Real-Time Digital Clock & Status Monitor:** Header clock with live seconds display and dynamic playback status indicators.
+* 🛠️ **Full Schedule Management (CRUD):**
+  * ➕ **Add New:** Create new time, day, and track schedules.
+  * ✏️ **Update:** Modify existing schedules or switch assigned media.
+  * 🗑️ **Delete:** Remove schedules from the active list.
+  * 🔄 **Reset Form:** Clear current form selection to create a new entry quickly.
+  * ⏹️ **Stop:** Halt currently playing audio immediately.
+* 💾 **Auto-Save & Backward Compatibility:** Configuration automatically syncs to `config_bpsound.json`.
+* ⚡ **Multi-Threaded Engine:** Non-blocking background thread continuously monitors clock schedules without freezing the UI.
 ---
 
 ## 🛠️ Built With
@@ -47,7 +52,7 @@ BPSound/
 Ensure Python is installed on your system. Install the required dependency via terminal:
 
 ```bash
-py -m pip install pygame
+py -m pip install pygame moviepy
 ```
 
 ### 2. Running the Application
@@ -58,11 +63,12 @@ py bpsound.py
 ```
 
 ### 3. Usage Guide
-1. Select the **Hour** and **Minute** from the dropdown menus.
-2. Click **🎵 Choose MP3** to select an audio file from your local directory.
-3. Click **➕ Add New** to add it to the schedule list.
-4. Click any item on the list to edit or update its song using **✏️ Update / Change Track**.
-5. Use **🗑️ Delete** to remove a schedule or **⏹️ Stop** to halt audio playback immediately.'''
+1. **Set Time:** Choose the **Hour** and **Minute** from the dropdown menus.
+2. **Select Days:** Check the specific days of the week or check **Setiap Hari** (Everyday).
+3. **Choose File:** Click **🎵 Pilih File** to choose an audio (`.mp3`, `.wav`, `.ogg`) or video file (`.mp4`, `.avi`, etc.).
+4. **Test Track (Optional):** Click **▶ Tes Audio** to verify the sound level.
+5. **Add/Update Schedule:** Click **➕ Tambah Baru** to save the schedule, or **✏️ Update Jadwal** to edit an existing entry.
+6. **Quick Test:** Double-click any item in the schedule list to test playback immediately.
 ---
 
 ## 📦 Build Standalone Executable (.exe)
@@ -84,11 +90,17 @@ To run the application on other systems without installing Python:
 ## 📄 Recommended `.gitignore`
 
 ```plaintext
+# Python cache
 __pycache__/
 *.pyc
+
+# Build outputs
 build/
 dist/
 *.spec
+
+# Local user configurations & cached conversions
 config_bpsound.json
+converted_audio_cache/
 ```
 ---
