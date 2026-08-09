@@ -1,39 +1,131 @@
-# 🎵 BPSound - Automated Hourly Audio Player
+# 🎵 BPSound — Automated Hourly Audio Player
 
 ![Python Version](https://img.shields.io/badge/python-3.12%20%7C%203.13-blue.svg)
 ![GUI Framework](https://img.shields.io/badge/GUI-Tkinter-orange.svg)
 ![Audio Engine](https://img.shields.io/badge/Audio-Pygame-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-brightgreen.svg)
 
-**BPSound** is a feature-rich desktop application designed to play audio and extracted video soundtracks automatically based on hourly and day-specific schedules. Built with a modern dark interface, it streamlines automated public announcements, background music, or hourly audio reminders.
+**BPSound** is a Python-based desktop application for automatically playing audio according to **scheduled times and days**. It is suitable for periodic announcements, background music, notification sounds, and other scheduled audio playback needs.
+
+BPSound features a dark-themed interface, schedule management, volume control, audio preview, and automatic audio extraction from video files using FFmpeg.
 
 ---
 
 ## ✨ Key Features
 
-* 📅 **Day-Based & Hourly Scheduling:** Assign audio files to specific days of the week (Monday–Sunday) or set them to play every day.
-* 🎬 **Automatic Video-to-Audio Conversion:** Select video files (`.mp4`, `.mov`, `.avi`, `.mkv`, `.webm`, `.flv`) and BPSound will automatically extract and cache the audio as `.mp3` using `moviepy`.
-* 🔊 **Master Volume Control:** Interactive real-time volume slider (0% to 100%) integrated with the Pygame audio engine.
-* ▶️ **Audio Testing & Quick Preview:**
-  * Click **▶ Tes Audio** to preview selected tracks before saving.
-  * **Double-click** any schedule in the list to trigger immediate playback testing.
-* ⏰ **Real-Time Digital Clock & Status Monitor:** Header clock with live seconds display and dynamic playback status indicators.
-* 🛠️ **Full Schedule Management (CRUD):**
-  * ➕ **Add New:** Create new time, day, and track schedules.
-  * ✏️ **Update:** Modify existing schedules or switch assigned media.
-  * 🗑️ **Delete:** Remove schedules from the active list.
-  * 🔄 **Reset Form:** Clear current form selection to create a new entry quickly.
-  * ⏹️ **Stop:** Halt currently playing audio immediately.
-* 💾 **Auto-Save & Backward Compatibility:** Configuration automatically syncs to `config_bpsound.json`.
-* ⚡ **Multi-Threaded Engine:** Non-blocking background thread continuously monitors clock schedules without freezing the UI.
+### 📅 Day & Time Scheduling
+
+- Set schedules based on hour and minute.
+- Supports times from `00:00` to `23:59`.
+- Select one or multiple days of the week.
+- Supports the **Every Day** option.
+- Schedule monitoring runs automatically in the background.
+- The same schedule is not played repeatedly on the same day.
+
+### 🎬 Video-to-Audio Conversion
+
+BPSound can extract audio from video files and automatically convert it to MP3.
+
+Supported video formats:
+
+```text
+.mp4
+.mov
+.avi
+.mkv
+.webm
+.flv
+```
+
+Conversion is performed using **FFmpeg** through `imageio-ffmpeg`.
+
+Converted files are stored in:
+
+```text
+converted_audio_cache/
+```
+
+If a converted file already exists and is not empty, BPSound reuses it without converting the video again.
+
+### 🔊 Audio Formats
+
+Audio formats that can be played directly:
+
+```text
+.mp3
+.wav
+.ogg
+```
+
+Video files are converted to MP3 before playback.
+
+### 🎚️ Master Volume Control
+
+BPSound provides master volume control from:
+
+```text
+0% — 100%
+```
+
+Audio playback is handled using `pygame.mixer`.
+
+### ▶️ Audio Preview
+
+Audio can be tested before being saved to a schedule using:
+
+```text
+▶ Tes Audio
+```
+
+Saved schedules can also be tested directly by **double-clicking** them in the schedule list.
+
+### ⏰ Real-Time Clock & Status Monitor
+
+The interface provides:
+
+- A real-time clock.
+- Schedule monitoring status.
+- Current audio playback status.
+- Video conversion status.
+- Error messages when a file is missing or playback fails.
+
+### 🛠️ Schedule Management
+
+BPSound provides schedule management:
+
+| Feature | Description |
+|---|---|
+| ➕ Add New | Create a new schedule |
+| ✏️ Update Schedule | Modify an existing schedule |
+| 🗑️ Delete Schedule | Delete a schedule |
+| 🔄 Reset Form | Clear the form |
+| ▶️ Test Audio | Test an audio file |
+| ⏹️ Stop Audio | Stop the currently playing audio |
+
+### 💾 Persistent Configuration
+
+Schedule configuration is automatically saved to:
+
+```text
+config_bpsound.json
+```
+
+The application also maintains compatibility with previous configuration formats.
+
 ---
 
-## 🛠️ Built With
+## 🛠️ Technologies Used
 
-* **Language:** Python 3.12 / 3.13
-* **GUI Framework:** `tkinter` & `tkinter.ttk`
-* **Audio Engine:** `pygame.mixer`
-* **Storage:** JSON (`config_bpsound.json`)
+| Component | Technology |
+|---|---|
+| Programming Language | Python 3.13 |
+| GUI | Tkinter & Tkinter ttk |
+| Audio Engine | Pygame Mixer |
+| Video Processing | FFmpeg |
+| FFmpeg Distribution | imageio-ffmpeg |
+| Video Integration | MoviePy |
+| Configuration | JSON |
+| Packaging | PyInstaller |
 
 ---
 
@@ -41,66 +133,428 @@
 
 ```text
 BPSound/
-├── bpsound.py            # Main application source code
-├── config_bpsound.json   # Auto-generated configuration file
-├── .gitignore            # Git ignore rules
-└── README.md             # Project documentation
+│
+├── bpsound.py
+├── bpsound.spec
+├── config_bpsound.json
+├── converted_audio_cache/
+├── build/
+├── dist/
+├── .gitignore
+└── README.md
 ```
-## 🚀 Getting Started
 
-### 1. Prerequisites
-Ensure Python is installed on your system. Install the required dependency via terminal:
+### Description
+
+- `bpsound.py` — main application source code.
+- `bpsound.spec` — PyInstaller configuration for the build process.
+- `config_bpsound.json` — schedule configuration.
+- `converted_audio_cache/` — cache for converted video audio files.
+- `build/` — temporary files generated by PyInstaller.
+- `dist/` — final executable output.
+- `.gitignore` — files excluded from the repository.
+- `README.md` — project documentation.
+
+---
+
+# 🚀 Installation & Running from Source Code
+
+## 1. Prerequisites
+
+Make sure Python is installed.
+
+Version used in the latest build:
+
+```text
+Python 3.13.15
+```
+
+Operating system used in the latest build:
+
+```text
+Windows 11
+```
+
+## 2. Install Dependencies
+
+Jalankan:
 
 ```bash
-py -m pip install pygame moviepy
+python -m pip install pygame moviepy imageio-ffmpeg pyinstaller
 ```
 
-### 2. Running the Application
-Execute the following command in your PowerShell or Terminal:
+atau:
+
+```bash
+py -m pip install pygame moviepy imageio-ffmpeg pyinstaller
+```
+
+## 3. Run the Application
+
+```bash
+python bpsound.py
+```
+
+atau:
 
 ```bash
 py bpsound.py
 ```
 
-### 3. Usage Guide
-1. **Set Time:** Choose the **Hour** and **Minute** from the dropdown menus.
-2. **Select Days:** Check the specific days of the week or check **Setiap Hari** (Everyday).
-3. **Choose File:** Click **🎵 Pilih File** to choose an audio (`.mp3`, `.wav`, `.ogg`) or video file (`.mp4`, `.avi`, etc.).
-4. **Test Track (Optional):** Click **▶ Tes Audio** to verify the sound level.
-5. **Add/Update Schedule:** Click **➕ Tambah Baru** to save the schedule, or **✏️ Update Jadwal** to edit an existing entry.
-6. **Quick Test:** Double-click any item in the schedule list to test playback immediately.
 ---
 
-## 📦 Build Standalone Executable (.exe)
+# 📖 Usage Guide
 
-To run the application on other systems without installing Python:
+### 1. Set the Time
 
-1. Instal PyInstaller:
-   ```bash
-   py -m pip install pyinstaller
-   ```
-2. Build the .exe file:
-   ```bash
-   pyinstaller --noconsole --onefile bpsound.py
-   ```
-3. Find your executable inside the dist/ directory.
+Select or enter:
+
+```text
+Hour   : 00–23
+Minute : 00–59
+```
+
+Contoh:
+
+```text
+08:00
+```
+
+### 2. Select Days
+
+Select specific days or use:
+
+```text
+Setiap Hari
+```
+
+### 3. Select a File
+
+Click:
+
+```text
+🎵 Pilih File
+```
+
+Then select an audio or video file.
+
+Audio:
+
+```text
+.mp3
+.wav
+.ogg
+```
+
+Video:
+
+```text
+.mp4
+.mov
+.avi
+.mkv
+.webm
+.flv
+```
+
+### 4. Test Audio
+
+Click:
+
+```text
+▶ Tes Audio
+```
+
+to make sure the audio can be played.
+
+### 5. Add a Schedule
+
+Click:
+
+```text
+➕ Tambah Baru
+```
+
+The schedule will be saved to the configuration.
+
+### 6. Update a Schedule
+
+Select a schedule from the list, make the required changes, then click:
+
+```text
+✏️ Update Jadwal
+```
+
+### 7. Test a Schedule
+
+Double-click a schedule in the list to play its audio immediately.
+
+### 8. Stop Audio
+
+Click:
+
+```text
+⏹️ Stop Audio
+```
+
+to stop the currently playing audio.
 
 ---
 
-## 📄 Recommended `.gitignore`
+# 🎬 How Video Conversion Works
 
-```plaintext
+Video conversion flow:
+
+```text
+File Video
+    │
+    ▼
+Pengecekan Format
+    │
+    ▼
+Cek converted_audio_cache/
+    │
+    ├── MP3 tersedia
+    │       │
+    │       ▼
+    │   Gunakan Cache
+    │
+    └── MP3 belum tersedia
+            │
+            ▼
+          FFmpeg
+            │
+            ▼
+        File MP3
+            │
+            ▼
+    converted_audio_cache/
+            │
+            ▼
+       Pygame Mixer
+            │
+            ▼
+       Audio Played
+```
+
+BPSound uses FFmpeg bundled through the PyInstaller configuration in the standalone application.
+
+---
+
+# 📦 Build Standalone `.exe`
+
+BPSound can be compiled into a standalone Windows application using **PyInstaller**.
+
+## 1. Install PyInstaller
+
+```bash
+python -m pip install pyinstaller
+```
+
+## 2. Build Using `.spec`
+
+Use the file:
+
+```text
+bpsound.spec
+```
+
+Kemudian jalankan:
+
+```bash
+python -m PyInstaller --clean bpsound.spec
+```
+
+atau:
+
+```bash
+py -m PyInstaller --clean bpsound.spec
+```
+
+### Why Use `.spec`?
+
+The `.spec` file is used to configure dependencies and resources that need to be included in the executable, including FFmpeg.
+
+FFmpeg used in the latest build:
+
+```text
+imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe
+```
+
+## 3. Build Output
+
+If the build succeeds, the executable will be available at:
+
+```text
+dist/bpsound.exe
+```
+
+The latest build successfully produced:
+
+```text
+dist\bpsound.exe
+```
+
+Status:
+
+```text
+✅ Build Successful
+```
+
+---
+
+# ⚠️ Build Notes
+
+To ensure FFmpeg is bundled, use:
+
+```bash
+python -m PyInstaller --clean bpsound.spec
+```
+
+It is recommended not to build directly using only:
+
+```bash
+python -m PyInstaller bpsound.py
+```
+
+because the `.spec` configuration is used to control dependency and FFmpeg bundling.
+
+---
+
+# 🔧 Automatic Playback Architecture
+
+BPSound uses a background thread to periodically check the current time and day.
+
+```text
+        ┌──────────────────────┐
+        │     BPSound GUI      │
+        │       Tkinter        │
+        └──────────┬───────────┘
+                   │
+                   ▼
+        ┌──────────────────────┐
+        │  Background Thread   │
+        │  Schedule Checker    │
+        └──────────┬───────────┘
+                   │
+                   ▼
+            Check current time
+                   │
+                   ▼
+             Check active day
+                   │
+              ┌────┴────┐
+              │         │
+            Match     Tidak
+              │         │
+              ▼         └──► Tunggu
+        Pygame Mixer
+              │
+              ▼
+        Audio Played
+```
+
+The system checks schedules every 5 seconds and uses a combination of time and date to prevent the same schedule from being played repeatedly on the same day.
+
+---
+
+# 🧹 `.gitignore`
+
+Use the following `.gitignore`:
+
+```gitignore
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
 
-# Build outputs
+# Virtual environment
+venv/
+.venv/
+
+# PyInstaller generated files
 build/
 dist/
-*.spec
 
-# Local user configurations & cached conversions
+# Local configuration
 config_bpsound.json
+
+# Converted audio cache
 converted_audio_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
 ```
+
+> **Note:** `bpsound.spec` should remain in the repository because it is used during the application build process.
+
+---
+
+# 📝 Troubleshooting
+
+## FFmpeg Not Found
+
+Make sure the build is performed using:
+
+```bash
+python -m PyInstaller --clean bpsound.spec
+```
+
+Also make sure the `imageio-ffmpeg` dependency is installed:
+
+```bash
+python -m pip install imageio-ffmpeg
+```
+
+## Video Cannot Be Converted
+
+Make sure:
+
+1. The video file can be opened normally.
+2. The video file contains an audio track.
+3. FFmpeg is available.
+4. The application can create and write to the `converted_audio_cache/` folder.
+
+## Audio Cannot Be Played
+
+Make sure the audio file:
+
+```text
+.mp3
+.wav
+.ogg
+```
+
+is not empty or corrupted.
+
+---
+
+# 📌 Build Information
+
+The latest build uses:
+
+```text
+PyInstaller : 6.22.0
+Python      : 3.13.15
+OS          : Windows 11
+Pygame      : 2.6.1
+FFmpeg      : imageio-ffmpeg v7.1
+```
+
+Output:
+
+```text
+dist/bpsound.exe
+```
+
+Status:
+
+```text
+✅ Build Successful
+```
+
 ---

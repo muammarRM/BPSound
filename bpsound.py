@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 import threading
 import time
 from datetime import datetime
@@ -18,18 +19,93 @@ from tkinter import (
     messagebox,
     ttk,
 )
-import pygame
 
-# Opsional: Coba import moviepy untuk konversi video ke mp3
+import pygame
+# ============================================================
+# MOVIEPY + FFMPEG
+# ============================================================
+
+# Jika dijalankan sebagai EXE PyInstaller
+if getattr(sys, "frozen", False):
+    BASE_DIR = sys._MEIPASS
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+# ------------------------------------------------------------
+# Cari FFmpeg dari imageio-ffmpeg
+# ------------------------------------------------------------
+FFMPEG_EXE = None
+FFMPEG_AVAILABLE = False
+
 try:
-    from moviepy.editor import VideoFileClip
-    MOVIEPY_AVAILABLE = True
-except ImportError:
+    import imageio_ffmpeg
+
+    # Cara normal
     try:
-        from moviepy import VideoFileClip
-        MOVIEPY_AVAILABLE = True
+        FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        FFMPEG_EXE = None
+
+    # Kalau PyInstaller gagal menemukan executable,
+    # cari langsung di folder bundle.
+    if not FFMPEG_EXE or not os.path.exists(FFMPEG_EXE):
+
+        possible_ffmpeg_paths = [
+            os.path.join(
+                BASE_DIR,
+                "imageio_ffmpeg",
+                "binaries",
+                "ffmpeg-win-x86_64.exe"
+            ),
+
+            os.path.join(
+                BASE_DIR,
+                "imageio_ffmpeg",
+                "binaries",
+                "ffmpeg-win32.exe"
+            ),
+
+            os.path.join(
+                BASE_DIR,
+                "ffmpeg.exe"
+            ),
+        ]
+
+        for path in possible_ffmpeg_paths:
+            if os.path.exists(path):
+                FFMPEG_EXE = path
+                break
+
+    if FFMPEG_EXE and os.path.exists(FFMPEG_EXE):
+        FFMPEG_AVAILABLE = True
+
+        # Sangat penting untuk MoviePy / imageio
+        os.environ["IMAGEIO_FFMPEG_EXE"] = FFMPEG_EXE
+
+        print(f"FFmpeg ditemukan: {FFMPEG_EXE}")
+    else:
+        print("FFmpeg tidak ditemukan di bundle.")
+
+except Exception as e:
+    print(f"FFmpeg tidak tersedia: {e}")
+
+
+# ------------------------------------------------------------
+# MoviePy
+# ------------------------------------------------------------
+try:
+    try:
+        from moviepy.editor import VideoFileClip
     except ImportError:
-        MOVIEPY_AVAILABLE = False
+        from moviepy import VideoFileClip
+
+    MOVIEPY_AVAILABLE = True
+    print("MoviePy berhasil dimuat.")
+
+except Exception as e:
+    print(f"MoviePy tidak tersedia: {e}")
+    MOVIEPY_AVAILABLE = False
 
 # Inisialisasi Audio Engine
 pygame.mixer.init()
@@ -507,46 +583,94 @@ class BPSoundApp:
     def ensure_mp3_format(self, original_path):
         ext = os.path.splitext(original_path)[1].lower()
 
+        # Format audio yang langsung bisa dimainkan pygame
         if ext in [".mp3", ".wav", ".ogg"]:
             return original_path
 
-        base_name = os.path.splitext(os.path.basename(original_path))[0]
-        converted_mp3_path = os.path.join(CACHE_DIR, f"{base_name}.mp3")
+        base_name = os.path.splitext(
+            os.path.basename(original_path)
+        )[0]
 
-        if os.path.exists(converted_mp3_path) and os.path.getsize(converted_mp3_path) > 0:
+        converted_mp3_path = os.path.join(
+            CACHE_DIR,
+            f"{base_name}.mp3"
+        )
+
+        # Kalau sudah pernah dikonversi
+        if (
+            os.path.exists(converted_mp3_path)
+            and os.path.getsize(converted_mp3_path) > 0
+        ):
             return converted_mp3_path
 
-        if MOVIEPY_AVAILABLE:
-            try:
-                self.lbl_status.config(
-                    text=f"⚙️ Mengonversi audio dari {os.path.basename(original_path)}...",
-                    fg="#F59E0B"
+        # Pastikan FFmpeg tersedia
+        if not FFMPEG_AVAILABLE or not FFMPEG_EXE:
+            messagebox.showerror(
+                "FFmpeg Tidak Ditemukan",
+                "FFmpeg tidak ditemukan di dalam aplikasi.\n\n"
+                "Pastikan aplikasi dibuild menggunakan file .spec "
+                "yang benar."
+            )
+            return None
+
+        try:
+            self.lbl_status.config(
+                text=f"⚙️ Mengonversi audio dari "
+                    f"{os.path.basename(original_path)}...",
+                fg="#F59E0B"
+            )
+
+            self.root.update_idletasks()
+
+            import subprocess
+
+            command = [
+                FFMPEG_EXE,
+                "-y",
+                "-i",
+                original_path,
+                "-vn",
+                "-acodec",
+                "libmp3lame",
+                "-q:a",
+                "2",
+                converted_mp3_path
+            ]
+
+            result = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW
+                if sys.platform == "win32"
+                else 0
+            )
+
+            if result.returncode != 0:
+                raise RuntimeError(
+                    result.stderr[-3000:]
                 )
-                self.root.update_idletasks()
 
-                try:
-                    from moviepy.editor import VideoFileClip
-                except ImportError:
-                    from moviepy.video.io.VideoFileClip import VideoFileClip
+            if (
+                os.path.exists(converted_mp3_path)
+                and os.path.getsize(converted_mp3_path) > 0
+            ):
+                return converted_mp3_path
 
-                with VideoFileClip(original_path) as video:
-                    if video.audio is not None:
-                        video.audio.write_audiofile(converted_mp3_path, logger=None)
-                    else:
-                        print("File video tidak memiliki trek audio!")
-                        return None
+            raise RuntimeError(
+                "File MP3 hasil konversi tidak terbentuk."
+            )
 
-                if os.path.exists(converted_mp3_path) and os.path.getsize(converted_mp3_path) > 0:
-                    return converted_mp3_path
-            except Exception as e:
-                print(f"Gagal ekstrak audio menggunakan moviepy: {e}")
+        except Exception as e:
+            messagebox.showerror(
+                "Detail Error Konversi",
+                f"Gagal mengonversi "
+                f"'{os.path.basename(original_path)}'.\n\n"
+                f"Detail Error:\n{e}"
+            )
 
-        messagebox.showerror(
-            "Konversi Gagal",
-            f"Gagal mengonversi file video '{os.path.basename(original_path)}' ke MP3.\n"
-            "Pastikan library 'moviepy' sudah terinstall (`pip install moviepy`)."
-        )
-        return None
+            return None
 
     def add_schedule(self):
         time_str = self.get_formatted_time()
@@ -579,6 +703,9 @@ class BPSoundApp:
             return
 
         processed_file = self.ensure_mp3_format(self.temp_file_path)
+
+        if not processed_file:
+            return
 
         self.schedule_data[time_str] = {
             "file": processed_file,
@@ -616,11 +743,21 @@ class BPSoundApp:
 
         current_file = self.schedule_data[time_str].get("file", "")
         if self.temp_file_path:
-            processed_file = self.ensure_mp3_format(self.temp_file_path)
+            processed_file = self.ensure_mp3_format(
+                self.temp_file_path
+            )
+
+            if not processed_file:
+                return
+
             orig_file = self.temp_file_path
+
         else:
             processed_file = current_file
-            orig_file = self.schedule_data[time_str].get("original_file", current_file)
+            orig_file = self.schedule_data[time_str].get(
+                "original_file",
+                current_file
+            )
 
         self.schedule_data[time_str] = {
             "file": processed_file,
@@ -715,7 +852,7 @@ class BPSoundApp:
 
             self.listbox.insert("end", f" {k}  |  [{days_str}]  |  {song_name}")
 
-    def save_config(self):
+    def save_config(self): 
         try:
             with open(CONFIG_FILE, "w") as f:
                 json.dump(self.schedule_data, f, indent=4)
