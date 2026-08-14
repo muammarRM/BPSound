@@ -170,9 +170,9 @@ class BPSoundApp:
     def __init__(self, root):
         self.root = root
         self.root.title("BPSound - BPS Automated Hourly Audio Player")
-        self.root.geometry("580x780")
+        self.root.geometry("580x810")
         self.root.configure(bg=COLOR_BG)
-        self.root.resizable(False, False)
+        self.root.resizable(True, True)
 
         self.schedule_data = {}
         self.temp_file_path = ""
@@ -187,8 +187,13 @@ class BPSoundApp:
         self.day_vars = {day: BooleanVar(value=True) for day in DAYS_LIST}
         self.var_everyday = BooleanVar(value=True)
 
+        # Variabel pelacak mode layout saat ini
+        self.current_layout = None  # 'vertical' atau 'horizontal'
+
         self.load_config()
         self.setup_ui()
+
+        self.root.bind("<Configure>", self.on_window_resize)
 
         # Jalankan Update Jam Real-Time UI
         self.update_realtime_clock()
@@ -231,7 +236,6 @@ class BPSoundApp:
             bg=COLOR_BG,
         ).pack(side="left")
 
-        # Jam Digital Realtime
         self.lbl_clock = Label(
             header_top,
             text="00:00:00",
@@ -250,28 +254,39 @@ class BPSoundApp:
         )
         self.lbl_status.pack(anchor="w", pady=(4, 0))
 
-        # === CARD FORM INPUT ===
-        card_input = Frame(self.root, bg=COLOR_CARD, padx=15, pady=15)
-        card_input.pack(fill="x", padx=20, pady=10)
+        # === KONTAINER UTAMA BERSAMA ===
+        self.main_container = Frame(self.root, bg=COLOR_BG)
+        self.main_container.pack(fill="both", expand=True, padx=20, pady=10)
+
+        # === CARD FORM INPUT (SISI KIRI / ATAS) ===
+        self.card_input = Frame(self.main_container, bg=COLOR_CARD, padx=15, pady=15)
 
         Label(
-            card_input,
+            self.card_input,
             text="Kelola Jadwal & Lagu/Video",
             font=("Segoe UI", 11, "bold"),
             fg=COLOR_TEXT,
             bg=COLOR_CARD,
-        ).grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 10))
+        ).grid(row=0, column=0, columnspan=3, sticky="w", pady=(0, 2))
 
         Label(
-            card_input,
+            self.card_input,
+            text="💡 Format: Audio (MP3, WAV, OGG) • Video (MP4, MOV, AVI, MKV, WEBM, FLV)",
+            font=("Segoe UI", 8, "italic"),
+            fg="#38BDF8",
+            bg=COLOR_CARD,
+        ).grid(row=1, column=0, columnspan=3, sticky="w", pady=(0, 10))
+
+        Label(
+            self.card_input,
             text="Pilih Jam:",
             font=("Segoe UI", 10),
             fg=COLOR_TEXT,
             bg=COLOR_CARD,
-        ).grid(row=1, column=0, sticky="w")
+        ).grid(row=2, column=0, sticky="w")
 
-        time_frame = Frame(card_input, bg=COLOR_CARD)
-        time_frame.grid(row=1, column=1, sticky="w", padx=5)
+        time_frame = Frame(self.card_input, bg=COLOR_CARD)
+        time_frame.grid(row=2, column=1, sticky="w", padx=5)
 
         hours_list = [f"{i:02d}" for i in range(24)]
         self.combo_hour = ttk.Combobox(
@@ -295,9 +310,8 @@ class BPSoundApp:
         self.combo_minute.set("00")
         self.combo_minute.pack(side="left")
 
-        # Tombol Media (Pilih & Preview)
-        media_btn_frame = Frame(card_input, bg=COLOR_CARD)
-        media_btn_frame.grid(row=1, column=2, sticky="e")
+        media_btn_frame = Frame(self.card_input, bg=COLOR_CARD)
+        media_btn_frame.grid(row=2, column=2, sticky="e")
 
         self.btn_select_file = Button(
             media_btn_frame,
@@ -330,7 +344,7 @@ class BPSoundApp:
         make_hoverable(self.btn_preview, COLOR_PREVIEW, "#047857")
 
         self.lbl_selected_file = Label(
-            card_input,
+            self.card_input,
             text="Belum ada file dipilih",
             fg=COLOR_MUTED,
             bg=COLOR_CARD,
@@ -338,12 +352,11 @@ class BPSoundApp:
             anchor="w",
         )
         self.lbl_selected_file.grid(
-            row=2, column=0, columnspan=3, sticky="w", pady=(6, 8)
+            row=3, column=0, columnspan=3, sticky="w", pady=(6, 8)
         )
 
-        # === CONTROL VOLUME INTERAKTIF ===
-        vol_frame = Frame(card_input, bg=COLOR_CARD)
-        vol_frame.grid(row=3, column=0, columnspan=3, sticky="we", pady=(0, 10))
+        vol_frame = Frame(self.card_input, bg=COLOR_CARD)
+        vol_frame.grid(row=4, column=0, columnspan=3, sticky="we", pady=(0, 10))
 
         Label(
             vol_frame,
@@ -367,21 +380,20 @@ class BPSoundApp:
             length=250,
             command=self.change_volume,
         )
-        self.slider_volume.set(80)  # Default Volume 80%
+        self.slider_volume.set(80)
         pygame.mixer.music.set_volume(0.8)
         self.slider_volume.pack(side="right")
 
-        # === PILIHAN HARI ===
         Label(
-            card_input,
+            self.card_input,
             text="Pilih Hari Pemutaran:",
             font=("Segoe UI", 10, "bold"),
             fg=COLOR_TEXT,
             bg=COLOR_CARD,
-        ).grid(row=4, column=0, columnspan=3, sticky="w", pady=(5, 5))
+        ).grid(row=5, column=0, columnspan=3, sticky="w", pady=(5, 5))
 
-        days_frame = Frame(card_input, bg=COLOR_CARD)
-        days_frame.grid(row=5, column=0, columnspan=3, sticky="w", pady=(0, 10))
+        days_frame = Frame(self.card_input, bg=COLOR_CARD)
+        days_frame.grid(row=6, column=0, columnspan=3, sticky="w", pady=(0, 10))
 
         cb_everyday = Checkbutton(
             days_frame,
@@ -417,9 +429,8 @@ class BPSoundApp:
             row = idx // 4
             cb.grid(row=row, column=col, sticky="w", padx=(0, 10), pady=2)
 
-        # Tombol Aksi Form
-        frame_form_btns = Frame(card_input, bg=COLOR_CARD)
-        frame_form_btns.grid(row=6, column=0, columnspan=3, sticky="we", pady=(10, 0))
+        frame_form_btns = Frame(self.card_input, bg=COLOR_CARD)
+        frame_form_btns.grid(row=7, column=0, columnspan=3, sticky="we", pady=(10, 0))
 
         self.btn_add = Button(
             frame_form_btns,
@@ -463,17 +474,19 @@ class BPSoundApp:
         self.btn_reset.pack(side="left", expand=True, fill="x", padx=(3, 0))
         make_hoverable(self.btn_reset, COLOR_RESET, "#334155")
 
-        # === LIST DAFTAR JADWAL ===
+        # === KONTAINER DAFTAR JADWAL (SISI KANAN / BAWAH) ===
+        self.list_container = Frame(self.main_container, bg=COLOR_BG)
+
         Label(
-            self.root,
+            self.list_container,
             text="Daftar Jam Terpasang (Klik 2x untuk Tes Audio):",
             font=("Segoe UI", 10, "bold"),
             fg=COLOR_TEXT,
             bg=COLOR_BG,
-        ).pack(anchor="w", padx=20, pady=(10, 5))
+        ).pack(anchor="w", pady=(0, 5))
 
-        frame_list = Frame(self.root, bg=COLOR_BG)
-        frame_list.pack(fill="both", expand=True, padx=20)
+        frame_list = Frame(self.list_container, bg=COLOR_BG)
+        frame_list.pack(fill="both", expand=True)
 
         self.scrollbar = Scrollbar(frame_list)
         self.scrollbar.pack(side="right", fill="y")
@@ -493,12 +506,10 @@ class BPSoundApp:
         self.scrollbar.config(command=self.listbox.yview)
 
         self.listbox.bind("<<ListboxSelect>>", self.on_listbox_select)
-        # Event Double-Click pada listbox untuk preview cepat
         self.listbox.bind("<Double-Button-1>", self.on_listbox_double_click)
 
-        # === BOTTOM BUTTONS ===
-        frame_bottom = Frame(self.root, bg=COLOR_BG)
-        frame_bottom.pack(fill="x", padx=20, pady=15)
+        frame_bottom = Frame(self.list_container, bg=COLOR_BG)
+        frame_bottom.pack(fill="x", pady=(10, 0))
 
         self.btn_delete = Button(
             frame_bottom,
@@ -531,6 +542,37 @@ class BPSoundApp:
         make_hoverable(self.btn_stop, COLOR_STOP, "#374151")
 
         self.refresh_listbox()
+    def on_window_resize(self, event):
+        """Mendeteksi perubahan ukuran jendela & mengubah layout secara dinamis."""
+        # Pastikan event resize berasal dari window utama, bukan widget anak
+        if event.widget != self.root:
+            return
+
+        width = event.width
+
+        # Jika lebar window >= 880px -> Mode Horizontal (Samping-sampingan)
+        if width >= 880 and self.current_layout != "horizontal":
+            self.current_layout = "horizontal"
+            
+            # Lepas susunan lama
+            self.card_input.pack_forget()
+            self.list_container.pack_forget()
+
+            # Pasang susunan baru: Form di Kiri, List di Kanan
+            self.card_input.pack(side="left", fill="y", anchor="n", padx=(0, 10))
+            self.list_container.pack(side="right", fill="both", expand=True, padx=(10, 0))
+
+        # Jika lebar window < 880px -> Mode Vertical (Menumpuk ke Bawah)
+        elif width < 880 and self.current_layout != "vertical":
+            self.current_layout = "vertical"
+
+            # Lepas susunan lama
+            self.card_input.pack_forget()
+            self.list_container.pack_forget()
+
+            # Pasang susunan baru: Form di Atas, List di Bawah
+            self.card_input.pack(side="top", fill="x", pady=(0, 10))
+            self.list_container.pack(side="top", fill="both", expand=True)
 
     # === UPDATE REALTIME CLOCK & PLAYBACK DETECTOR ===
     def update_realtime_clock(self):
