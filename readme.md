@@ -22,6 +22,12 @@ BPSound features a dark-themed interface, schedule management, volume control, a
 - Schedule monitoring runs automatically in the background.
 - The same schedule is not played repeatedly on the same day.
 
+### 🔇 Automatic Background App Muting
+
+- Automatically mutes other Windows audio sessions (e.g., Spotify, Chrome, Edge, Media Players) when scheduled audio or test audio starts playing.
+- Automatically restores (unmutes) the volume of other applications once the audio playback finishes or is manually stopped.
+- Powered by `pycaw` and Windows COM API (`ctypes.windll.ole32`).
+
 ### 🎬 Video-to-Audio Conversion
 
 BPSound can extract audio from video files and automatically convert it to MP3.
@@ -180,13 +186,13 @@ Windows 11
 Jalankan:
 
 ```bash
-python -m pip install pygame moviepy imageio-ffmpeg pyinstaller
+python -m pip install pygame moviepy imageio-ffmpeg pyinstaller pycaw comtypes
 ```
 
 atau:
 
 ```bash
-py -m pip install pygame moviepy imageio-ffmpeg pyinstaller
+py -m pip install pygame moviepy imageio-ffmpeg pyinstaller pycaw comtypes
 ```
 
 ## 3. Run the Application
@@ -443,15 +449,22 @@ BPSound uses a background thread to periodically check the current time and day.
                    ▼
              Check active day
                    │
-              ┌────┴────┐
-              │         │
-            Match     Tidak
-              │         │
-              ▼         └──► Tunggu
+             ┌─────┴─────┐
+             │           │
+           Match       Tidak
+             │           │
+             ▼           └──► Tunggu
+   set_other_apps_mute(True)
+             │
+             ▼
         Pygame Mixer
-              │
-              ▼
+             │
+             ▼
         Audio Played
+             │
+             ▼
+   set_other_apps_mute(False)
+
 ```
 
 The system checks schedules every 5 seconds and uses a combination of time and date to prevent the same schedule from being played repeatedly on the same day.
@@ -467,22 +480,24 @@ Use the following `.gitignore`:
 __pycache__/
 *.pyc
 *.pyo
+*.py[cod]
 
 # Virtual environment
 venv/
 .venv/
+env/
 
-# PyInstaller generated files
+# PyInstaller / Build outputs (Folder hasil build & file temporary)
 build/
 dist/
+*.manifest
+*.spec.bak
 
-# Local configuration
+# Local configuration & App Cache
 config_bpsound.json
-
-# Converted audio cache
 converted_audio_cache/
 
-# IDE
+# IDE / Code Editor
 .vscode/
 .idea/
 

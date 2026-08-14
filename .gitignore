@@ -2,22 +2,24 @@
 __pycache__/
 *.pyc
 *.pyo
+*.py[cod]
 
 # Virtual environment
 venv/
 .venv/
+env/
 
-# PyInstaller generated files
+# PyInstaller / Build outputs (Folder hasil build & file temporary)
 build/
 dist/
+*.manifest
+*.spec.bak
 
-# Local configuration
+# Local configuration & App Cache
 config_bpsound.json
-
-# Converted audio cache
 converted_audio_cache/
 
-# IDE
+# IDE / Code Editor
 .vscode/
 .idea/
 

@@ -20,6 +20,34 @@ from tkinter import (
     ttk,
 )
 
+import ctypes
+
+# Virtual Key Code untuk Media Play/Pause di Windows
+VK_MEDIA_PLAY_PAUSE = 0xAF
+KEYEVENTF_KEYUP = 0x0002
+
+from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume
+
+def set_other_apps_mute(mute=True):
+    """Membungkam (mute) atau mengembalikan suara (unmute) aplikasi lain selain BPSound."""
+    try:
+        # Inisialisasi COM untuk thread yang sedang berjalan
+        ctypes.windll.ole32.CoInitialize(None)
+
+        sessions = AudioUtilities.GetAllSessions()
+        for session in sessions:
+            volume = session._ctl.QueryInterface(ISimpleAudioVolume)
+            if session.Process and session.Process.name():
+                proc_name = session.Process.name().lower()
+                # Jangan mute Python / BPSound itu sendiri!
+                if "python" not in proc_name and "bpsound" not in proc_name:
+                    volume.SetMute(mute, None)
+    except Exception as e:
+        print(f"Gagal mengatur mute aplikasi lain: {e}")
+    finally:
+        # Uninitialize COM setelah selesai
+        ctypes.windll.ole32.CoUninitialize()
+
 import pygame
 # ============================================================
 # MOVIEPY + FFMPEG
@@ -173,6 +201,9 @@ class BPSoundApp:
             target=self.check_schedule_loop, daemon=True
         )
         self.checker_thread.start()
+        self.last_played_hour = None
+        self.is_running = True
+        self.external_media_paused = False  # Status media eksternal
 
     def setup_ui(self):
         style = ttk.Style()
@@ -908,19 +939,50 @@ class BPSoundApp:
         try:
             pygame.mixer.music.stop()
             pygame.mixer.music.unload()
+
+            # MUTE semua aplikasi lain (Spotify, Browser, Player lokal)
+            if not self.external_media_paused:
+                set_other_apps_mute(True)
+                self.external_media_paused = True
+
             pygame.mixer.music.load(file_path)
             pygame.mixer.music.play()
+
+            # Thread pantau sampai selesai
+            threading.Thread(target=self._wait_and_resume_external_media, daemon=True).start()
+
         except Exception as e:
             print(f"Error play audio: {e}")
             self.lbl_status.config(
                 text=f"❌ Gagal memutar audio: {e}", fg="#EF4444"
             )
+            # Jika error, kembalikan suara aplikasi lain
+            if self.external_media_paused:
+                set_other_apps_mute(False)
+                self.external_media_paused = False
+
+    def _wait_and_resume_external_media(self):
+        """Menunggu hingga audio BPSound selesai, lalu unmute aplikasi lain."""
+        time.sleep(0.5)
+
+        while pygame.mixer.music.get_busy() and self.is_running:
+            time.sleep(0.5)
+
+        # UNMUTE semua aplikasi lain setelah alarm BPSound selesai
+        if self.external_media_paused:
+            set_other_apps_mute(False)
+            self.external_media_paused = False
 
     def stop_audio(self):
         pygame.mixer.music.stop()
         self.lbl_status.config(
             text="● Memantau jadwal pemutaran...", fg="#10B981"
         )
+
+        # Jika di-stop manual, UNMUTE aplikasi lain
+        if self.external_media_paused:
+            set_other_apps_mute(False)
+            self.external_media_paused = False
 
     def check_schedule_loop(self):
         while self.is_running:
@@ -937,7 +999,7 @@ class BPSoundApp:
                     trigger_key = f"{current_hm}_{now.strftime('%Y-%m-%d')}"
                     if self.last_played_hour != trigger_key:
                         if audio_file:
-                            self.play_audio(current_hm, audio_file)
+                            self.root.after(0, self.play_audio, current_hm, audio_file)
                             self.last_played_hour = trigger_key
 
             time.sleep(5)
